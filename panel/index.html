@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>QR Paneli</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/panel.css">
+</head>
+<body class="panel">
+  <header id="topbar" class="topbar" hidden>
+    <div>
+      <strong>QR Paneli</strong>
+      <span id="repoName" class="muted small"></span>
+    </div>
+    <button id="logoutBtn" class="secondary small" type="button">Çıkış yap</button>
+  </header>
+
+  <div id="banner" class="banner" hidden>
+    <span id="bannerText" role="status"></span>
+    <button id="bannerClose" class="icon" type="button" aria-label="Kapat">×</button>
+  </div>
+
+  <main>
+    <!-- Giriş -->
+    <section id="view-login" class="narrow">
+      <h1 tabindex="-1">QR Paneli</h1>
+      <!-- Token alanına bilerek name verilmedi: JS çalışmazsa bile form token'ı URL'ye koyamaz. -->
+      <form id="loginForm" class="fields" autocomplete="off">
+        <label>GitHub erişim token'ı
+          <input id="tokenInput" type="password" autocomplete="off" spellcheck="false" autocapitalize="off">
+        </label>
+        <label class="check">
+          <input id="rememberInput" type="checkbox"> Bu cihazda hatırla
+        </label>
+        <p class="hint">İşaretlemezsen token sekme kapanınca silinir. Ortak kullanılan cihazlarda işaretleme.</p>
+        <button id="loginBtn" type="submit">Giriş yap</button>
+        <p id="loginStatus" class="muted" role="status"></p>
+        <p id="loginError" class="error" role="alert"></p>
+      </form>
+      <details>
+        <summary>Token nasıl oluşturulur?</summary>
+        <ol>
+          <li><a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">GitHub → Settings → Developer settings → Fine-grained tokens → Generate new token</a></li>
+          <li>Repository access: <strong>Only select repositories</strong> → sadece <span id="repoHint">bu</span> reposu.</li>
+          <li>Permissions → Repository permissions → <strong>Contents: Read and write</strong>. Başka izin gerekmez.</li>
+          <li>Oluşan token'ı kopyalayıp buraya yapıştır.</li>
+        </ol>
+      </details>
+    </section>
+
+    <!-- Liste -->
+    <section id="view-list" hidden>
+      <div class="toolbar">
+        <h1 tabindex="-1">QR kodlar</h1>
+        <button id="newBtn" type="button">Yeni QR</button>
+      </div>
+      <input id="searchInput" type="search" placeholder="Başlık, slug veya hedefte ara" aria-label="Ara">
+      <p id="listEmpty" class="muted" hidden></p>
+      <ul id="list" class="qr-list"></ul>
+    </section>
+
+    <!-- Oluşturma / düzenleme -->
+    <section id="view-editor" hidden>
+      <div class="toolbar">
+        <button id="backBtn" class="secondary small" type="button">← Listeye dön</button>
+        <h1 id="editorTitle" tabindex="-1">Yeni QR</h1>
+      </div>
+
+      <div class="editor">
+        <form id="editorForm" class="fields" autocomplete="off" novalidate>
+          <label>Başlık
+            <input id="titleInput" type="text" maxlength="120">
+          </label>
+
+          <label>Slug
+            <input id="slugInput" type="text" maxlength="40" spellcheck="false" autocapitalize="off">
+          </label>
+          <p id="slugHint" class="hint"></p>
+
+          <label>Hedef link
+            <input id="targetInput" type="text" inputmode="url" spellcheck="false" autocapitalize="off" placeholder="https://…">
+          </label>
+          <p class="hint">Basılı QR'lar bu adrese yönlenir; istediğin zaman değiştirebilirsin.</p>
+
+          <label class="check">
+            <input id="activeInput" type="checkbox" checked> Aktif
+          </label>
+
+          <div class="row">
+            <label>Ön plan <input id="fgInput" type="color" value="#000000"></label>
+            <label>Arka plan <input id="bgInput" type="color" value="#ffffff"></label>
+          </div>
+          <p id="contrastWarning" class="warning"></p>
+
+          <label>Logo (isteğe bağlı · PNG, JPG, WEBP, SVG · en fazla 5 MB)
+            <input id="logoInput" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml,.svg">
+          </label>
+          <div class="row">
+            <span id="logoInfo" class="muted small"></span>
+            <button id="logoRemoveBtn" class="secondary small" type="button" hidden>Logoyu kaldır</button>
+          </div>
+
+          <label>Logo boyutu: <span id="logoScaleValue">0.22</span>
+            <input id="logoScaleInput" type="range" min="0.1" max="0.28" step="0.01" value="0.22">
+          </label>
+
+          <p id="appearanceNote" class="note" hidden>Görünüş değişikliği sadece yeniden basacağın QR'ı etkiler; link değişikliği basılı QR'larda da geçerli olur.</p>
+
+          <p id="formError" class="error" role="alert"></p>
+          <p id="formStatus" class="muted" role="status"></p>
+          <div class="actions">
+            <button id="saveBtn" type="submit">Kaydet</button>
+          </div>
+
+          <div id="dangerZone" class="danger-zone" hidden>
+            <div class="actions">
+              <button id="deactivateBtn" class="secondary" type="button">Sil (devre dışı bırak)</button>
+              <button id="deleteBtn" class="danger-outline" type="button">Kalıcı olarak sil…</button>
+            </div>
+            <p class="hint">“Sil” QR'ı devre dışı bırakır; basılı QR'lar “Bu QR şu an devre dışı” gösterir ve istediğin zaman yeniden açabilirsin.</p>
+            <div id="deleteConfirm" class="confirm" hidden>
+              <p><strong>Kalıcı silme geri alınamaz.</strong> Basılı QR'lar “Bu QR bulunamadı” gösterir. Onaylamak için slug'ı yaz: <code id="deleteSlug"></code></p>
+              <input id="deleteInput" type="text" spellcheck="false" autocapitalize="off" aria-label="Onay için slug">
+              <div class="actions">
+                <button id="deleteConfirmBtn" class="danger" type="button" disabled>Kalıcı olarak sil</button>
+                <button id="deleteCancelBtn" class="secondary" type="button">Vazgeç</button>
+              </div>
+            </div>
+          </div>
+        </form>
+
+        <aside class="preview" aria-label="Önizleme">
+          <div id="previewHost" class="preview-canvas"></div>
+          <p id="previewError" class="error small"></p>
+          <p class="muted small">QR'ın içindeki adres:</p>
+          <div class="link-row">
+            <code id="previewLink"></code>
+            <button id="previewCopyBtn" class="secondary small" type="button">Kopyala</button>
+          </div>
+          <div class="actions">
+            <button id="pngBtn" type="button">PNG indir (2048px)</button>
+            <button id="svgBtn" type="button">SVG indir</button>
+          </div>
+          <p id="downloadHint" class="hint"></p>
+        </aside>
+      </div>
+    </section>
+
+    <noscript><p>Panel JavaScript gerektirir.</p></noscript>
+  </main>
+
+  <script src="../config.js"></script>
+  <script src="../vendor/qrcode.min.js"></script>
+  <script src="../assets/js/qr-render.js"></script>
+  <script src="../assets/js/image-utils.js"></script>
+  <script src="../assets/js/contrast.js"></script>
+  <script src="../assets/js/github-api.js"></script>
+  <script src="../assets/js/panel.js"></script>
+</body>
+</html>

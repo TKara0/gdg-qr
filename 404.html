@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Yönlendiriliyor…</title>
+  <script>
+    // 404.html, /<basePath>/<slug> gibi herhangi bir yolda sunulur. Göreli
+    // dosya yollarının site köküne çözülmesi için base'i slug'ın üst klasörü yap.
+    (function () {
+      var p = location.pathname.replace(/\/+$/, "");
+      var b = document.createElement("base");
+      b.href = p.slice(0, p.lastIndexOf("/") + 1) || "/";
+      document.head.appendChild(b);
+    })();
+  </script>
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+  <main>
+    <p id="status" role="status">Yönlendiriliyor…</p>
+    <button id="retry" type="button" hidden>Tekrar dene</button>
+    <noscript>
+      <p>Bu QR bağlantısı JavaScript ile yönlendirilir. Devam etmek için tarayıcınızda JavaScript'i etkinleştirin.</p>
+    </noscript>
+  </main>
+  <script src="config.js" onerror="document.getElementById('status').textContent='Bu QR bulunamadı'"></script>
+  <script src="assets/js/redirect.js" onerror="document.getElementById('status').textContent='Bu QR bulunamadı'"></script>
+</body>
+</html>
