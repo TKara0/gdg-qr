@@ -50,102 +50,80 @@
       </details>
     </section>
 
-    <!-- Liste -->
-    <section id="view-list" hidden>
-      <div class="toolbar">
-        <h1 tabindex="-1">QR kodlar</h1>
-        <button id="newBtn" type="button">Yeni QR</button>
-      </div>
-      <input id="searchInput" type="search" placeholder="Başlık, slug veya hedefte ara" aria-label="Ara">
-      <p id="listEmpty" class="muted" hidden></p>
-      <ul id="list" class="qr-list"></ul>
-    </section>
-
-    <!-- Oluşturma / düzenleme -->
-    <section id="view-editor" hidden>
-      <div class="toolbar">
-        <button id="backBtn" class="secondary small" type="button">← Listeye dön</button>
-        <h1 id="editorTitle" tabindex="-1">Yeni QR</h1>
-      </div>
-
+    <!-- Yeni QR + liste -->
+    <section id="view-main" hidden>
       <div class="editor">
-        <form id="editorForm" class="fields" autocomplete="off" novalidate>
-          <label>Başlık
-            <input id="titleInput" type="text" maxlength="120">
+        <form id="createForm" class="fields" autocomplete="off" novalidate>
+          <h1 tabindex="-1">Yeni QR</h1>
+          <label>QR adı
+            <input id="createTitle" type="text" maxlength="120">
           </label>
-
-          <label>Slug
-            <input id="slugInput" type="text" maxlength="40" spellcheck="false" autocapitalize="off">
+          <label>Bağlanılacak link
+            <input id="createTarget" type="text" inputmode="url" spellcheck="false" autocapitalize="off" placeholder="https://…">
           </label>
-          <p id="slugHint" class="hint"></p>
-
-          <label>Hedef link
-            <input id="targetInput" type="text" inputmode="url" spellcheck="false" autocapitalize="off" placeholder="https://…">
-          </label>
-          <p class="hint">Basılı QR'lar bu adrese yönlenir; istediğin zaman değiştirebilirsin.</p>
-
-          <label class="check">
-            <input id="activeInput" type="checkbox" checked> Aktif
-          </label>
-
-          <div class="row">
-            <label>Ön plan <input id="fgInput" type="color" value="#000000"></label>
-            <label>Arka plan <input id="bgInput" type="color" value="#ffffff"></label>
-          </div>
-          <p id="contrastWarning" class="warning"></p>
-
-          <label>Logo (isteğe bağlı · PNG, JPG, WEBP, SVG · en fazla 5 MB)
-            <input id="logoInput" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml,.svg">
+          <label>Görsel (isteğe bağlı)
+            <input id="createLogo" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml,.svg">
           </label>
           <div class="row">
-            <span id="logoInfo" class="muted small"></span>
-            <button id="logoRemoveBtn" class="secondary small" type="button" hidden>Logoyu kaldır</button>
+            <span id="createLogoInfo" class="muted small"></span>
+            <button id="createLogoRemove" class="secondary small" type="button" hidden>Görseli kaldır</button>
           </div>
-
-          <label>Logo boyutu: <span id="logoScaleValue">0.22</span>
-            <input id="logoScaleInput" type="range" min="0.1" max="0.28" step="0.01" value="0.22">
-          </label>
-
-          <p id="appearanceNote" class="note" hidden>Görünüş değişikliği sadece yeniden basacağın QR'ı etkiler; link değişikliği basılı QR'larda da geçerli olur.</p>
-
-          <p id="formError" class="error" role="alert"></p>
-          <p id="formStatus" class="muted" role="status"></p>
+          <p id="createError" class="error" role="alert"></p>
+          <p id="createStatus" class="muted" role="status"></p>
           <div class="actions">
-            <button id="saveBtn" type="submit">Kaydet</button>
-          </div>
-
-          <div id="dangerZone" class="danger-zone" hidden>
-            <div class="actions">
-              <button id="deactivateBtn" class="secondary" type="button">Sil (devre dışı bırak)</button>
-              <button id="deleteBtn" class="danger-outline" type="button">Kalıcı olarak sil…</button>
-            </div>
-            <p class="hint">“Sil” QR'ı devre dışı bırakır; basılı QR'lar “Bu QR şu an devre dışı” gösterir ve istediğin zaman yeniden açabilirsin.</p>
-            <div id="deleteConfirm" class="confirm" hidden>
-              <p><strong>Kalıcı silme geri alınamaz.</strong> Basılı QR'lar “Bu QR bulunamadı” gösterir. Onaylamak için slug'ı yaz: <code id="deleteSlug"></code></p>
-              <input id="deleteInput" type="text" spellcheck="false" autocapitalize="off" aria-label="Onay için slug">
-              <div class="actions">
-                <button id="deleteConfirmBtn" class="danger" type="button" disabled>Kalıcı olarak sil</button>
-                <button id="deleteCancelBtn" class="secondary" type="button">Vazgeç</button>
-              </div>
-            </div>
+            <button id="createBtn" type="submit">QR oluştur</button>
           </div>
         </form>
 
-        <aside class="preview" aria-label="Önizleme">
-          <div id="previewHost" class="preview-canvas"></div>
-          <p id="previewError" class="error small"></p>
-          <p class="muted small">QR'ın içindeki adres:</p>
+        <aside id="result" class="preview" aria-label="Oluşturulan QR" hidden>
+          <h2 id="resultTitle"></h2>
+          <div id="resultPreview" class="preview-canvas"></div>
           <div class="link-row">
-            <code id="previewLink"></code>
-            <button id="previewCopyBtn" class="secondary small" type="button">Kopyala</button>
+            <code id="resultLink"></code>
+            <button id="resultCopyBtn" class="secondary small" type="button">Kopyala</button>
           </div>
           <div class="actions">
-            <button id="pngBtn" type="button">PNG indir (2048px)</button>
-            <button id="svgBtn" type="button">SVG indir</button>
+            <button id="resultPngBtn" type="button">PNG indir (2048px)</button>
+            <button id="resultSvgBtn" type="button">SVG indir</button>
           </div>
-          <p id="downloadHint" class="hint"></p>
         </aside>
       </div>
+
+      <h2 class="list-title">QR'larım</h2>
+      <p id="listError" class="error" role="alert"></p>
+      <p id="listEmpty" class="muted" hidden>Henüz QR yok.</p>
+      <ul id="list" class="qr-list"></ul>
+    </section>
+
+    <!-- Düzenleme -->
+    <section id="view-editor" hidden>
+      <div class="toolbar">
+        <button id="backBtn" class="secondary small" type="button">← Listeye dön</button>
+        <h1 id="editorTitle" tabindex="-1">QR düzenle</h1>
+      </div>
+
+      <form id="editForm" class="fields narrow-form" autocomplete="off" novalidate>
+        <label>QR adı
+          <input id="editTitle" type="text" maxlength="120">
+        </label>
+        <label>Bağlanılacak link
+          <input id="editTarget" type="text" inputmode="url" spellcheck="false" autocapitalize="off" placeholder="https://…">
+        </label>
+        <label>Görsel (isteğe bağlı)
+          <input id="editLogo" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml,.svg">
+        </label>
+        <div class="row">
+          <img id="editLogoImg" class="logo-thumb" alt="" hidden>
+          <span id="editLogoInfo" class="muted small"></span>
+          <button id="editLogoRemove" class="secondary small" type="button" hidden>Görseli kaldır</button>
+        </div>
+        <p class="note">Linki değiştirirsen basılı QR'lar da yeni linke gider. QR'ın kendisi değişmez.</p>
+        <p id="editError" class="error" role="alert"></p>
+        <p id="editStatus" class="muted" role="status"></p>
+        <div class="actions">
+          <button id="saveBtn" type="submit">Kaydet</button>
+        </div>
+      </form>
     </section>
 
     <noscript><p>Panel JavaScript gerektirir.</p></noscript>
@@ -155,7 +133,6 @@
   <script src="../vendor/qrcode.min.js"></script>
   <script src="../assets/js/qr-render.js"></script>
   <script src="../assets/js/image-utils.js"></script>
-  <script src="../assets/js/contrast.js"></script>
   <script src="../assets/js/github-api.js"></script>
   <script src="../assets/js/panel.js"></script>
 </body>

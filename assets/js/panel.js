@@ -1,5 +1,5 @@
 // Yönetim paneli. Bağımlılıklar: config.js, qr-render.js, image-utils.js,
-// contrast.js, github-api.js
+// github-api.js
 (function () {
   "use strict";
 
@@ -13,6 +13,9 @@
   var PUBLISH_INTERVAL = 10000;
   var PUBLISH_TIMEOUT = 180000;
   var TR_CHARS = { "ç": "c", "ğ": "g", "ı": "i", "ö": "o", "ş": "s", "ü": "u", "Ç": "c", "Ğ": "g", "İ": "i", "Ö": "o", "Ş": "s", "Ü": "u" };
+  // Yeni QR'ların görünüşü; kullanıcıya ayar olarak gösterilmez. Kenar boşluğu
+  // renderQR'ın varsayılanı (4).
+  var DEFAULT_STYLE = { fg: "#000000", bg: "#ffffff", ecl: "H", logoScale: 0.22 };
 
   var cfg = window.QR_CONFIG || {};
   var owner = String(cfg.owner || "");
@@ -27,6 +30,8 @@
   var data = null; // links.json içeriği
   var sha = null; // links.json'un okunduğu andaki blob sha'sı
   var logoCache = {}; // repo yolu → Promise<HTMLImageElement|null>
+  var createLogo = null; // { img, dataURL } yeni QR için seçilen görsel
+  var resultSlug = null;
   var editor = null;
   var busy = false;
   var publishRun = 0;
@@ -44,6 +49,13 @@
     if (className) node.className = className;
     if (text != null) node.textContent = text;
     return node;
+  }
+
+  function button(text, className, onClick) {
+    var b = el("button", className, text);
+    b.type = "button";
+    b.addEventListener("click", onClick);
+    return b;
   }
 
   function userError(message) {
@@ -65,14 +77,9 @@
     return now;
   }
 
+  // QR'ın içine her zaman bu adres yazılır, hedef link asla yazılmaz.
   function shortLink(slug) {
     return siteRoot + "/" + slug;
-  }
-
-  function formatDate(iso) {
-    var d = new Date(iso);
-    if (isNaN(d.getTime())) return "—";
-    return d.toLocaleString("tr-TR", { dateStyle: "medium", timeStyle: "short" });
   }
 
   function normalizeHex(value, fallback) {
@@ -81,12 +88,6 @@
     var h = m[1].toLowerCase();
     if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
     return "#" + h;
-  }
-
-  function clampScale(value) {
-    var n = Number(value);
-    if (!isFinite(n)) return 0.22;
-    return Math.min(0.28, Math.max(0.1, n));
   }
 
   function safeHttpUrl(value) {
@@ -117,11 +118,6 @@
     return s;
   }
 
-  // Aramada büyük/küçük harf ve ı/i farkını yok say ("Instagram" → "instagram").
-  function fold(text) {
-    return String(text || "").toLocaleLowerCase("tr").replace(/ı/g, "i");
-  }
-
   function slugify(text) {
     return String(text || "")
       .replace(/[çğıöşüÇĞİÖŞÜ]/g, function (c) { return TR_CHARS[c]; })
@@ -134,12 +130,33 @@
       .replace(/-+$/, "");
   }
 
-  function slugProblem(slug) {
-    if (!slug) return "Slug gerekli.";
-    if (!SLUG_RE.test(slug)) return "Slug 2–40 karakter olmalı; yalnızca küçük harf (a-z), rakam ve tire içerebilir.";
-    if (RESERVED.indexOf(slug) !== -1) return "“" + slug + "” sistem tarafından ayrılmış; başka bir slug seç.";
-    if (has(data.links, slug)) return "“" + slug + "” zaten kullanılıyor.";
-    return null;
+  function slugFree(slug, links) {
+    return SLUG_RE.test(slug) && RESERVED.indexOf(slug) === -1 && !has(links, slug);
+  }
+
+  function randomSlug() {
+    var chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+    var bytes = crypto.getRandomValues(new Uint8Array(6));
+    var out = "";
+    for (var i = 0; i < bytes.length; i++) out += chars[bytes[i] % chars.length];
+    return out;
+  }
+
+  // QR adından slug: çakışırsa ya da ayrılmışsa -2, -3… eklenir; geçerli bir
+  // slug çıkmıyorsa (boş ya da tek karakter) rastgele 6 karakter.
+  function uniqueSlug(title, links) {
+    var base = slugify(title);
+    var slug;
+    if (base.length < 2) {
+      do { slug = randomSlug(); } while (!slugFree(slug, links));
+      return slug;
+    }
+    if (slugFree(base, links)) return base;
+    for (var n = 2; ; n++) {
+      var suffix = "-" + n;
+      slug = base.slice(0, 40 - suffix.length).replace(/-+$/, "") + suffix;
+      if (slugFree(slug, links)) return slug;
+    }
   }
 
   function loadImage(src) {
@@ -178,7 +195,7 @@
   // ---- Görünümler ve durum mesajları ----
 
   function showView(name) {
-    ["login", "list", "editor"].forEach(function (v) {
+    ["login", "main", "editor"].forEach(function (v) {
       $("view-" + v).hidden = v !== name;
     });
     $("topbar").hidden = name === "login";
@@ -195,10 +212,9 @@
 
   function setBusy(value) {
     busy = value;
-    ["saveBtn", "deactivateBtn", "deleteBtn", "deleteConfirmBtn", "backBtn", "logoutBtn", "newBtn"].forEach(function (id) {
+    ["createBtn", "saveBtn", "backBtn", "logoutBtn"].forEach(function (id) {
       $(id).disabled = value;
     });
-    if (!value) updateDeleteConfirm();
   }
 
   // Oturum sırasında token geçersizleşirse girişe dön.
@@ -269,6 +285,14 @@
     return logoCache[path];
   }
 
+  async function uploadLogo(slug, dataURL, img) {
+    var path = "assets/logos/" + slug + ".png";
+    var existing = await client.getFile(path);
+    await client.putFile(path, dataURL.split(",")[1], "qr: " + slug + " logosu yüklendi", existing ? existing.sha : undefined);
+    logoCache[path] = Promise.resolve(img);
+    return path;
+  }
+
   // Ana kayıt başarılı olduktan sonra çağrılır; başarısız olursa repoda
   // kullanılmayan bir dosya kalır, sistem etkilenmez.
   function removeRepoFile(path, message) {
@@ -281,7 +305,6 @@
 
   // ---- Yayın takibi ----
 
-  // expected: beklenen updatedAt; null ise kaydın yayından kalkması beklenir.
   function watchPublish(slug, expected) {
     var run = ++publishRun;
     var started = Date.now();
@@ -296,15 +319,14 @@
         if (res.ok) {
           var pub = await res.json();
           var links = (pub && pub.links) || {};
-          var entry = has(links, slug) ? links[slug] : null;
-          done = expected === null ? !entry : !!entry && entry.updatedAt === expected;
+          done = has(links, slug) && links[slug].updatedAt === expected;
         }
       } catch (e) {
         // Bir sonraki denemede tekrar bakılır.
       }
       if (run !== publishRun) return;
       if (done) {
-        setBanner("Yayında: " + slug + (expected === null ? " kaldırıldı." : " güncel."), "ok");
+        setBanner("Yayında: " + slug + " güncel.", "ok");
       } else if (Date.now() - started >= PUBLISH_TIMEOUT) {
         setBanner("Değişiklik repoya kaydedildi ama 3 dakikada yayında görünmedi. GitHub Pages derlemesi gecikmiş olabilir; repodaki Actions sekmesine bak.", "warn");
       } else {
@@ -350,8 +372,11 @@
     $("repoName").textContent = owner + "/" + repo;
     $("loginStatus").textContent = "";
     $("loginError").textContent = "";
+    resetCreateForm();
+    $("result").hidden = true;
+    resultSlug = null;
     renderList();
-    showView("list");
+    showView("main");
   }
 
   function endSession(message) {
@@ -361,11 +386,13 @@
     sha = null;
     logoCache = {};
     editor = null;
+    resultSlug = null;
     publishRun++;
     setBanner("");
     setBusy(false);
+    resetCreateForm();
+    $("result").hidden = true;
     $("list").replaceChildren();
-    $("searchInput").value = "";
     $("loginStatus").textContent = "";
     $("loginError").textContent = message || "";
     showView("login");
@@ -432,10 +459,55 @@
     }
   }
 
-  // ---- Liste ----
+  // ---- QR çizimi ve indirme ----
 
-  function badge(active) {
-    return el("span", "badge " + (active ? "on" : "off"), active ? "Aktif" : "Pasif");
+  // Kaydın kendi style alanı kullanılır; eksik değerler renderQR varsayılanına düşer.
+  function entryQrOptions(slug, entry, logo, size) {
+    var style = entry.style || {};
+    var scale = Number(style.logoScale);
+    return {
+      text: shortLink(slug),
+      fg: normalizeHex(style.fg, DEFAULT_STYLE.fg),
+      bg: normalizeHex(style.bg, DEFAULT_STYLE.bg),
+      ecl: style.ecl,
+      logo: logo,
+      logoScale: style.logoScale != null && isFinite(scale) ? scale : DEFAULT_STYLE.logoScale,
+      size: size
+    };
+  }
+
+  // Logo dosyası repoda yoksa QR logosuz çizilir.
+  async function entryLogo(entry) {
+    if (!entry.logo) return null;
+    return loadRepoLogo(entry.logo);
+  }
+
+  function saveBlob(blob, filename) {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  async function downloadEntry(slug, kind, errorTarget) {
+    errorTarget.textContent = "";
+    var entry = data.links[slug];
+    if (!entry) return;
+    try {
+      var logo = await entryLogo(entry);
+      var result = renderQR(entryQrOptions(slug, entry, logo, kind === "png" ? 2048 : 1024));
+      if (kind === "png") {
+        saveBlob(await result.toPNGBlob(), slug + ".png");
+      } else {
+        saveBlob(new Blob([result.toSVGString()], { type: "image/svg+xml" }), slug + ".svg");
+      }
+    } catch (e) {
+      handleError(e, errorTarget);
+    }
   }
 
   function copyText(text) {
@@ -456,20 +528,13 @@
     });
   }
 
-  function bindCopy(button, getText) {
-    button.addEventListener("click", function () {
-      copyText(getText()).then(
-        function () { flash(button, "Kopyalandı"); },
-        function () { flash(button, "Kopyalanamadı"); }
-      );
-    });
+  function flash(btn, text) {
+    btn.textContent = text;
+    clearTimeout(btn._flash);
+    btn._flash = setTimeout(function () { btn.textContent = "Kopyala"; }, 1500);
   }
 
-  function flash(button, text) {
-    button.textContent = text;
-    clearTimeout(button._flash);
-    button._flash = setTimeout(function () { button.textContent = "Kopyala"; }, 1500);
-  }
+  // ---- Liste ----
 
   function linkOrText(url) {
     var safe = safeHttpUrl(url);
@@ -481,448 +546,228 @@
     return a;
   }
 
-  function renderThumb(host, slug, entry) {
-    var style = entry.style || {};
+  function renderThumb(host, slug, entry, size) {
     function draw(logo) {
       try {
-        host.replaceChildren(renderQR({
-          text: shortLink(slug),
-          fg: normalizeHex(style.fg, "#000000"),
-          bg: normalizeHex(style.bg, "#ffffff"),
-          ecl: style.ecl,
-          logo: logo,
-          logoScale: clampScale(style.logoScale),
-          size: 144
-        }).canvas);
+        host.replaceChildren(renderQR(entryQrOptions(slug, entry, logo, size || 144)).canvas);
       } catch (e) {
         host.textContent = "";
       }
     }
     draw(null);
-    if (entry.logo) {
-      loadRepoLogo(entry.logo).then(function (img) { if (img) draw(img); }).catch(function () {});
-    }
+    entryLogo(entry).then(function (img) { if (img) draw(img); }).catch(function () {});
   }
 
-  function buildCard(slug, entry) {
+  function buildRow(slug, entry) {
     var li = el("li", "qr-card");
-    var link = shortLink(slug);
 
     var thumb = el("div", "thumb");
-    thumb.title = "Düzenle";
-    thumb.addEventListener("click", function () { openEditor(slug); });
     renderThumb(thumb, slug, entry);
     li.appendChild(thumb);
 
     var body = el("div", "card-body");
-    var head = el("div", "card-head");
-    head.appendChild(el("strong", null, String(entry.title || slug)));
-    head.appendChild(badge(entry.active === true));
-    body.appendChild(head);
-    body.appendChild(el("div", "muted small", slug + " · " + formatDate(entry.updatedAt)));
-
-    var linkRow = el("div", "link-row small");
-    linkRow.appendChild(linkOrText(link));
-    var copy = el("button", "secondary small", "Kopyala");
-    copy.type = "button";
-    bindCopy(copy, function () { return link; });
-    linkRow.appendChild(copy);
-    body.appendChild(linkRow);
-
-    var target = el("div", "target small", "→ ");
+    body.appendChild(el("strong", null, String(entry.title || slug)));
+    var target = el("div", "target small");
     target.appendChild(linkOrText(entry.target));
     body.appendChild(target);
     li.appendChild(body);
 
-    var edit = el("button", "secondary small", "Düzenle");
-    edit.type = "button";
-    edit.addEventListener("click", function () { openEditor(slug); });
-    li.appendChild(edit);
+    var actions = el("div", "actions");
+    actions.appendChild(button("Düzenle", "secondary small", function () { openEditor(slug); }));
+    actions.appendChild(button("PNG", "secondary small", function () { downloadEntry(slug, "png", $("listError")); }));
+    actions.appendChild(button("SVG", "secondary small", function () { downloadEntry(slug, "svg", $("listError")); }));
+    li.appendChild(actions);
     return li;
   }
 
   function renderList() {
-    var query = fold($("searchInput").value.trim());
     var links = data.links;
     var slugs = Object.keys(links).sort(function (a, b) {
-      return String((links[b] || {}).updatedAt || "").localeCompare(String((links[a] || {}).updatedAt || ""));
+      return String((links[b] || {}).createdAt || "").localeCompare(String((links[a] || {}).createdAt || ""));
     });
     var list = $("list");
     list.replaceChildren();
-    var shown = 0;
     slugs.forEach(function (slug) {
-      var entry = links[slug] || {};
-      var haystack = fold([entry.title, slug, entry.target].join(" "));
-      if (query && haystack.indexOf(query) === -1) return;
-      list.appendChild(buildCard(slug, entry));
-      shown++;
+      if (links[slug]) list.appendChild(buildRow(slug, links[slug]));
     });
-    $("listEmpty").hidden = shown > 0;
-    $("listEmpty").textContent = slugs.length
-      ? "Aramaya uyan QR yok."
-      : "Henüz QR yok. “Yeni QR” ile ilkini oluştur.";
+    $("listEmpty").hidden = slugs.length > 0;
   }
 
-  // ---- Düzenleyici ----
+  // ---- Yeni QR ----
 
-  function setLogoInfo(text) {
-    $("logoInfo").textContent = text;
+  function resetCreateForm() {
+    $("createForm").reset();
+    createLogo = null;
+    $("createLogoInfo").textContent = "";
+    $("createLogoRemove").hidden = true;
+    $("createError").textContent = "";
+    $("createStatus").textContent = "";
   }
 
-  function currentForm() {
-    return {
-      title: $("titleInput").value.trim(),
-      slug: editor.slug || $("slugInput").value.trim(),
-      target: $("targetInput").value,
-      active: $("activeInput").checked,
-      fg: normalizeHex($("fgInput").value, "#000000"),
-      bg: normalizeHex($("bgInput").value, "#ffffff"),
-      logoScale: clampScale($("logoScaleInput").value)
-    };
+  function readTitleAndTarget(titleInput, targetInput) {
+    var title = titleInput.value.trim();
+    if (!title) return { error: "QR adı gerekli." };
+    if (!targetInput.value.trim()) return { error: "Bağlanılacak link gerekli." };
+    var target = normalizeTarget(targetInput.value);
+    if (!target) return { error: "Link, http:// ya da https:// ile başlayan geçerli bir adres olmalı." };
+    return { title: title, target: target };
   }
 
-  function currentLogoImg() {
-    return editor.logo.status === "removed" ? null : editor.logo.img;
+  // Seçilen dosyayı 512px PNG'ye çevirir; { img, dataURL, width, height } döner.
+  async function prepareLogo(file) {
+    var norm = await normalizeLogo(await loadImageFromFile(file));
+    var img = await loadImage(norm.dataURL);
+    return { img: img, dataURL: norm.dataURL, width: norm.width, height: norm.height };
   }
 
-  function eclFor(hasLogo) {
-    if (hasLogo) return "H";
-    return ["L", "M", "Q", "H"].indexOf(editor.original.ecl) !== -1 ? editor.original.ecl : "M";
+  async function handleCreateLogo() {
+    var input = $("createLogo");
+    var file = input.files[0];
+    $("createError").textContent = "";
+    if (!file) {
+      createLogo = null;
+      $("createLogoInfo").textContent = "";
+      $("createLogoRemove").hidden = true;
+      return;
+    }
+    try {
+      createLogo = await prepareLogo(file);
+      $("createLogoInfo").textContent = "Görsel hazır (" + createLogo.width + "×" + createLogo.height + " px).";
+      $("createLogoRemove").hidden = false;
+    } catch (e) {
+      createLogo = null;
+      input.value = "";
+      $("createLogoInfo").textContent = "";
+      $("createLogoRemove").hidden = true;
+      $("createError").textContent = e.message;
+    }
   }
 
-  function qrOptions(form, size) {
-    var logo = currentLogoImg();
-    return {
-      text: shortLink(form.slug),
-      fg: form.fg,
-      bg: form.bg,
-      ecl: eclFor(!!logo),
-      logo: logo,
-      logoScale: form.logoScale,
-      size: size
-    };
+  function showResult(slug) {
+    var entry = data.links[slug];
+    if (!entry) return;
+    resultSlug = slug;
+    $("resultTitle").textContent = String(entry.title || slug);
+    $("resultLink").textContent = shortLink(slug);
+    renderThumb($("resultPreview"), slug, entry, 640);
+    $("result").hidden = false;
   }
 
-  function appearanceChanged(form) {
-    var o = editor.original;
-    return form.fg !== o.fg || form.bg !== o.bg ||
-      Math.abs(form.logoScale - o.logoScale) > 1e-9 || editor.logo.status !== "keep";
+  async function handleCreate(ev) {
+    ev.preventDefault();
+    if (busy) return;
+    var form = readTitleAndTarget($("createTitle"), $("createTarget"));
+    $("createError").textContent = form.error || "";
+    if (form.error) return;
+
+    var logo = createLogo;
+    setBusy(true);
+    try {
+      var slug = uniqueSlug(form.title, data.links);
+      var logoValue = null;
+      if (logo) {
+        $("createStatus").textContent = "Görsel yükleniyor…";
+        logoValue = await uploadLogo(slug, logo.dataURL, logo.img);
+      }
+      $("createStatus").textContent = "Kaydediliyor…";
+      var stamp = null;
+      await commitLinks(function (links) {
+        // Çakışmada links.json yeniden okunur; bu arada aynı slug alınmışsa
+        // görsel yolu da o slug'a ait olacağından yeniden oluşturmak gerekir.
+        if (has(links, slug)) throw userError("Bu ad az önce başka bir yerden kullanıldı. “QR oluştur”a tekrar bas.");
+        stamp = isoNow();
+        links[slug] = {
+          target: form.target,
+          title: form.title,
+          active: true,
+          logo: logoValue,
+          style: JSON.parse(JSON.stringify(DEFAULT_STYLE)),
+          createdAt: stamp,
+          updatedAt: stamp
+        };
+      }, "qr: " + slug + " oluşturuldu");
+
+      watchPublish(slug, stamp);
+      resetCreateForm();
+      renderList();
+      showResult(slug);
+    } catch (e) {
+      $("createStatus").textContent = "";
+      handleError(e, $("createError"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // ---- Düzenleme ----
+
+  function updateEditorLogo() {
+    var logo = editor.logo;
+    var img = logo.status === "removed" ? null : logo.img;
+    $("editLogoImg").hidden = !img;
+    if (img) $("editLogoImg").src = img.src;
+    var info;
+    if (logo.status === "new") info = "Yeni görsel, kaydedince yüklenecek.";
+    else if (logo.status === "removed") info = "Görsel kaldırılacak (kaydedince).";
+    else if (logo.loading) info = "Mevcut görsel yükleniyor…";
+    else if (editor.original.logo) info = img ? "Mevcut görsel" : "Görsel dosyası repoda bulunamadı.";
+    else info = "Görsel yok";
+    $("editLogoInfo").textContent = info;
+    $("editLogoRemove").hidden = !(logo.status === "new" || (logo.status === "keep" && editor.original.logo));
   }
 
   function openEditor(slug) {
-    var entry = slug ? data.links[slug] : null;
-    var style = (entry && entry.style) || {};
+    var entry = data.links[slug];
+    if (!entry) return;
     var current = {
-      slug: slug || null,
-      original: {
-        fg: normalizeHex(style.fg, "#000000"),
-        bg: normalizeHex(style.bg, "#ffffff"),
-        logoScale: clampScale(style.logoScale == null ? 0.22 : style.logoScale),
-        ecl: style.ecl,
-        logo: (entry && entry.logo) || null
-      },
-      logo: { status: "keep", img: null, dataURL: null, loading: false },
-      slugTouched: !!slug
+      slug: slug,
+      original: { logo: entry.logo || null },
+      logo: { status: "keep", img: null, dataURL: null, loading: !!entry.logo }
     };
     editor = current;
 
-    $("editorTitle").textContent = slug ? "QR düzenle" : "Yeni QR";
-    $("titleInput").value = entry ? String(entry.title || "") : "";
-    $("slugInput").value = slug || "";
-    $("slugInput").readOnly = !!slug;
-    $("targetInput").value = entry ? String(entry.target || "") : "";
-    $("activeInput").checked = entry ? entry.active === true : true;
-    $("fgInput").value = current.original.fg;
-    $("bgInput").value = current.original.bg;
-    $("logoScaleInput").value = current.original.logoScale;
-    $("logoInput").value = "";
-    $("formError").textContent = "";
-    $("formStatus").textContent = "";
-    $("dangerZone").hidden = !slug;
-    closeDeleteConfirm();
-    updateDangerZone();
+    $("editForm").reset();
+    $("editTitle").value = String(entry.title || "");
+    $("editTarget").value = String(entry.target || "");
+    $("editError").textContent = "";
+    $("editStatus").textContent = "";
+    updateEditorLogo();
 
-    if (current.original.logo) {
-      current.logo.loading = true;
-      setLogoInfo("Mevcut logo yükleniyor…");
-      loadRepoLogo(current.original.logo)
+    if (entry.logo) {
+      entryLogo(entry)
         .then(function (img) {
           if (editor !== current) return;
           current.logo.loading = false;
-          if (current.logo.status !== "keep") return;
-          current.logo.img = img;
-          setLogoInfo(img ? "Mevcut logo" : "Logo dosyası repoda bulunamadı.");
-          updateEditor();
+          if (current.logo.status === "keep") current.logo.img = img;
+          updateEditorLogo();
         })
-        .catch(function (err) {
+        .catch(function () {
           if (editor !== current) return;
           current.logo.loading = false;
-          setLogoInfo("Logo yüklenemedi: " + err.message);
-          updateEditor();
+          updateEditorLogo();
         });
-    } else {
-      setLogoInfo("Logo yok");
     }
-
     showView("editor");
-    updateEditor();
   }
 
-  function updateEditor() {
-    if (!editor) return;
-    var form = currentForm();
-    $("logoScaleValue").textContent = form.logoScale.toFixed(2);
-
-    var slugHint = $("slugHint");
-    var problem = editor.slug ? null : slugProblem(form.slug);
-    if (editor.slug) {
-      slugHint.textContent = "Slug değiştirilemez: basılı QR'lar bu adrese bağlı. Farklı bir adres gerekiyorsa yeni bir QR oluştur.";
-    } else {
-      slugHint.textContent = problem || "Kısa link: " + shortLink(form.slug);
-    }
-    slugHint.classList.toggle("error", !!problem);
-
-    $("contrastWarning").textContent = contrastWarning(form.fg, form.bg) || "";
-    $("appearanceNote").hidden = !(editor.slug && appearanceChanged(form));
-    $("logoRemoveBtn").hidden = !(editor.logo.status === "new" ||
-      (editor.logo.status === "keep" && editor.original.logo));
-
-    var host = $("previewHost");
-    $("previewError").textContent = "";
-    if (problem) {
-      host.replaceChildren();
-      $("previewLink").textContent = "—";
-      $("previewError").textContent = "Geçerli bir slug girince önizleme görünür.";
-    } else {
-      $("previewLink").textContent = shortLink(form.slug);
-      try {
-        host.replaceChildren(renderQR(qrOptions(form, 640)).canvas);
-      } catch (e) {
-        host.replaceChildren();
-        $("previewError").textContent = e.message;
-      }
-    }
-
-    var canDownload = !!editor.slug && !editor.logo.loading && !$("previewError").textContent;
-    $("pngBtn").disabled = !canDownload;
-    $("svgBtn").disabled = !canDownload;
-    $("previewCopyBtn").disabled = !!problem;
-    $("downloadHint").textContent = editor.slug
-      ? ""
-      : "İndirmek için önce kaydet. Kaydedilmemiş bir QR basılırsa “Bu QR bulunamadı” gösterir.";
-  }
-
-  function updateDangerZone() {
-    if (!editor || !editor.slug) return;
-    var entry = data.links[editor.slug];
-    $("deactivateBtn").hidden = !entry || entry.active !== true;
-  }
-
-  function closeDeleteConfirm() {
-    $("deleteConfirm").hidden = true;
-    $("deleteInput").value = "";
-    updateDeleteConfirm();
-  }
-
-  function updateDeleteConfirm() {
-    $("deleteConfirmBtn").disabled = busy || !editor || !editor.slug ||
-      $("deleteInput").value.trim() !== editor.slug;
-  }
-
-  function validateForm(form) {
-    if (!form.title) return "Başlık gerekli.";
-    if (!editor.slug) {
-      var problem = slugProblem(form.slug);
-      if (problem) return problem;
-    }
-    if (!normalizeTarget(form.target)) return "Hedef link geçerli bir http:// veya https:// adresi olmalı.";
-    return null;
-  }
-
-  async function handleSave(ev) {
-    ev.preventDefault();
-    if (busy || !editor) return;
-    var form = currentForm();
-    var invalid = validateForm(form);
-    $("formError").textContent = invalid || "";
-    if (invalid) return;
-
-    var current = editor;
-    var isNew = !current.slug;
-    var slug = form.slug;
-    var target = normalizeTarget(form.target);
-    $("targetInput").value = target;
-
-    setBusy(true);
-    try {
-      var stamp = null;
-      var logoPath = "assets/logos/" + slug + ".png";
-      var logoValue;
-
-      if (current.logo.status === "new") {
-        $("formStatus").textContent = "Logo yükleniyor…";
-        var existing = await client.getFile(logoPath);
-        await client.putFile(
-          logoPath,
-          current.logo.dataURL.split(",")[1],
-          "qr: " + slug + " logosu yüklendi",
-          existing ? existing.sha : undefined
-        );
-        logoCache[logoPath] = Promise.resolve(current.logo.img);
-        logoValue = logoPath;
-      } else if (current.logo.status === "removed") {
-        logoValue = null;
-      } else {
-        logoValue = current.original.logo;
-      }
-
-      var style = { fg: form.fg, bg: form.bg, ecl: eclFor(!!logoValue), logoScale: form.logoScale };
-
-      $("formStatus").textContent = "Kaydediliyor…";
-      await commitLinks(function (links) {
-        if (isNew) {
-          if (has(links, slug)) throw userError("“" + slug + "” bu arada başka bir yerden eklenmiş; farklı bir slug seç.");
-          stamp = isoNow();
-          links[slug] = {
-            target: target,
-            title: form.title,
-            active: form.active,
-            logo: logoValue,
-            style: style,
-            createdAt: stamp,
-            updatedAt: stamp
-          };
-        } else {
-          if (!has(links, slug)) throw userError("Bu QR bu arada başka bir yerden silinmiş.");
-          var entry = links[slug];
-          stamp = nextStamp(entry.updatedAt);
-          entry.target = target;
-          entry.title = form.title;
-          entry.active = form.active;
-          entry.logo = logoValue;
-          entry.style = Object.assign({}, entry.style, style);
-          entry.updatedAt = stamp;
-        }
-      }, "qr: " + slug + (isNew ? " oluşturuldu" : " güncellendi"));
-
-      if (current.logo.status === "removed" && current.original.logo && current.original.logo !== logoValue) {
-        removeRepoFile(current.original.logo, "qr: " + slug + " logosu silindi");
-      }
-
-      watchPublish(slug, stamp);
-      setBusy(false);
-      openEditor(slug);
-      $("formStatus").textContent = isNew ? "QR oluşturuldu." : "Değişiklikler kaydedildi.";
-    } catch (e) {
-      $("formStatus").textContent = "";
-      handleError(e, $("formError"));
-      // Çakışmada links.json yeniden okunmuş olabilir; slug uyarısını tazele.
-      if (editor === current) updateEditor();
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleDeactivate() {
-    if (busy || !editor || !editor.slug) return;
-    var slug = editor.slug;
-    $("formError").textContent = "";
-    setBusy(true);
-    try {
-      var stamp = null;
-      await commitLinks(function (links) {
-        if (!has(links, slug)) throw userError("Bu QR bu arada başka bir yerden silinmiş.");
-        stamp = nextStamp(links[slug].updatedAt);
-        links[slug].active = false;
-        links[slug].updatedAt = stamp;
-      }, "qr: " + slug + " güncellendi");
-      $("activeInput").checked = false;
-      $("formStatus").textContent = "QR devre dışı bırakıldı. Basılı QR'lar “Bu QR şu an devre dışı” gösterir; “Aktif” kutusunu işaretleyip kaydederek yeniden açabilirsin.";
-      watchPublish(slug, stamp);
-    } catch (e) {
-      handleError(e, $("formError"));
-    } finally {
-      setBusy(false);
-      updateDangerZone();
-    }
-  }
-
-  async function handleDelete() {
-    if (busy || !editor || !editor.slug) return;
-    var slug = editor.slug;
-    if ($("deleteInput").value.trim() !== slug) return;
-    var entry = data.links[slug];
-    var logo = entry && entry.logo;
-    $("formError").textContent = "";
-    setBusy(true);
-    try {
-      await commitLinks(function (links) {
-        if (!has(links, slug)) throw userError("Bu QR zaten silinmiş.");
-        delete links[slug];
-      }, "qr: " + slug + " silindi");
-      if (logo) removeRepoFile(logo, "qr: " + slug + " logosu silindi");
-      watchPublish(slug, null);
-      setBusy(false);
-      editor = null;
-      renderList();
-      showView("list");
-    } catch (e) {
-      handleError(e, $("formError"));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  function saveBlob(blob, filename) {
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-  }
-
-  function handleDownload(kind) {
-    if (!editor || !editor.slug) return;
-    var slug = editor.slug;
-    try {
-      var result = renderQR(qrOptions(currentForm(), kind === "png" ? 2048 : 1024));
-      if (kind === "png") {
-        result.toPNGBlob()
-          .then(function (blob) { saveBlob(blob, slug + ".png"); })
-          .catch(function (e) { $("previewError").textContent = e.message; });
-      } else {
-        saveBlob(new Blob([result.toSVGString()], { type: "image/svg+xml" }), slug + ".svg");
-      }
-    } catch (e) {
-      $("previewError").textContent = e.message;
-    }
-  }
-
-  async function handleLogoFile() {
-    var input = $("logoInput");
+  async function handleEditLogo() {
+    var input = $("editLogo");
     var file = input.files[0];
     if (!file || !editor) return;
     var current = editor;
-    $("formError").textContent = "";
+    $("editError").textContent = "";
     try {
-      var img = await loadImageFromFile(file);
-      var norm = await normalizeLogo(img);
-      var logoImg = await loadImage(norm.dataURL);
+      var logo = await prepareLogo(file);
       if (editor !== current) return;
-      current.logo = { status: "new", img: logoImg, dataURL: norm.dataURL, loading: false };
-      setLogoInfo("Yeni logo (" + norm.width + "×" + norm.height + " px), kaydedince yüklenecek.");
-      updateEditor();
+      current.logo = { status: "new", img: logo.img, dataURL: logo.dataURL, loading: false };
+      updateEditorLogo();
     } catch (e) {
-      if (editor === current) $("formError").textContent = e.message;
-    } finally {
       input.value = "";
+      if (editor === current) $("editError").textContent = e.message;
     }
   }
 
-  function handleLogoRemove() {
+  function handleEditLogoRemove() {
     if (!editor) return;
     editor.logo = {
       status: editor.original.logo ? "removed" : "keep",
@@ -930,8 +775,58 @@
       dataURL: null,
       loading: false
     };
-    setLogoInfo(editor.original.logo ? "Logo kaldırılacak (kaydedince)." : "Logo yok");
-    updateEditor();
+    $("editLogo").value = "";
+    updateEditorLogo();
+  }
+
+  async function handleSave(ev) {
+    ev.preventDefault();
+    if (busy || !editor) return;
+    var form = readTitleAndTarget($("editTitle"), $("editTarget"));
+    $("editError").textContent = form.error || "";
+    if (form.error) return;
+
+    var current = editor;
+    var slug = current.slug; // ad değişse de slug asla değişmez
+    $("editTarget").value = form.target;
+    setBusy(true);
+    try {
+      var logoValue = current.original.logo;
+      if (current.logo.status === "new") {
+        $("editStatus").textContent = "Görsel yükleniyor…";
+        logoValue = await uploadLogo(slug, current.logo.dataURL, current.logo.img);
+      } else if (current.logo.status === "removed") {
+        logoValue = null;
+      }
+
+      $("editStatus").textContent = "Kaydediliyor…";
+      var stamp = null;
+      await commitLinks(function (links) {
+        if (!has(links, slug)) throw userError("Bu QR repoda bulunamadı.");
+        var entry = links[slug];
+        // active ve style'a dokunulmaz.
+        stamp = nextStamp(entry.updatedAt);
+        entry.title = form.title;
+        entry.target = form.target;
+        entry.logo = logoValue;
+        entry.updatedAt = stamp;
+      }, "qr: " + slug + " güncellendi");
+
+      if (current.logo.status === "removed" && current.original.logo && current.original.logo !== logoValue) {
+        removeRepoFile(current.original.logo, "qr: " + slug + " logosu silindi");
+      }
+
+      watchPublish(slug, stamp);
+      editor = null;
+      renderList();
+      if (resultSlug === slug) showResult(slug);
+      showView("main");
+    } catch (e) {
+      $("editStatus").textContent = "";
+      handleError(e, $("editError"));
+    } finally {
+      setBusy(false);
+    }
   }
 
   // ---- Olaylar ----
@@ -945,52 +840,31 @@
     setBanner("");
   });
 
-  $("searchInput").addEventListener("input", renderList);
-  $("newBtn").addEventListener("click", function () { openEditor(null); });
+  $("createForm").addEventListener("submit", handleCreate);
+  $("createLogo").addEventListener("change", handleCreateLogo);
+  $("createLogoRemove").addEventListener("click", function () {
+    $("createLogo").value = "";
+    handleCreateLogo();
+  });
+
+  $("resultCopyBtn").addEventListener("click", function () {
+    var btn = this;
+    copyText(shortLink(resultSlug)).then(
+      function () { flash(btn, "Kopyalandı"); },
+      function () { flash(btn, "Kopyalanamadı"); }
+    );
+  });
+  $("resultPngBtn").addEventListener("click", function () { downloadEntry(resultSlug, "png", $("createError")); });
+  $("resultSvgBtn").addEventListener("click", function () { downloadEntry(resultSlug, "svg", $("createError")); });
+
+  $("editForm").addEventListener("submit", handleSave);
+  $("editLogo").addEventListener("change", handleEditLogo);
+  $("editLogoRemove").addEventListener("click", handleEditLogoRemove);
   $("backBtn").addEventListener("click", function () {
     if (busy) return;
     editor = null;
-    renderList();
-    showView("list");
+    showView("main");
   });
-
-  $("titleInput").addEventListener("input", function () {
-    if (editor && !editor.slug && !editor.slugTouched) $("slugInput").value = slugify(this.value);
-    updateEditor();
-  });
-  $("slugInput").addEventListener("input", function () {
-    if (!editor || editor.slug) return;
-    var lower = this.value.toLowerCase();
-    if (lower !== this.value) this.value = lower;
-    editor.slugTouched = this.value !== "";
-    updateEditor();
-  });
-  ["targetInput", "activeInput", "fgInput", "bgInput", "logoScaleInput"].forEach(function (id) {
-    $(id).addEventListener("input", updateEditor);
-  });
-  $("logoInput").addEventListener("change", handleLogoFile);
-  $("logoRemoveBtn").addEventListener("click", handleLogoRemove);
-  $("editorForm").addEventListener("submit", handleSave);
-
-  $("deactivateBtn").addEventListener("click", handleDeactivate);
-  $("deleteBtn").addEventListener("click", function () {
-    $("deleteSlug").textContent = editor ? editor.slug : "";
-    $("deleteConfirm").hidden = false;
-    $("deleteInput").focus();
-  });
-  $("deleteInput").addEventListener("input", updateDeleteConfirm);
-  // Alan düzenleme formunun içinde; Enter formu kaydetmesin, silmeyi onaylasın.
-  $("deleteInput").addEventListener("keydown", function (ev) {
-    if (ev.key !== "Enter") return;
-    ev.preventDefault();
-    if (!$("deleteConfirmBtn").disabled) handleDelete();
-  });
-  $("deleteCancelBtn").addEventListener("click", closeDeleteConfirm);
-  $("deleteConfirmBtn").addEventListener("click", handleDelete);
-
-  $("pngBtn").addEventListener("click", function () { handleDownload("png"); });
-  $("svgBtn").addEventListener("click", function () { handleDownload("svg"); });
-  bindCopy($("previewCopyBtn"), function () { return shortLink(currentForm().slug); });
 
   autoLogin();
 })();
