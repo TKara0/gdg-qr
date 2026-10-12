@@ -28,6 +28,20 @@
       },
       "createdAt": "2026-10-12T12:26:10Z",
       "updatedAt": "2026-10-12T12:26:10Z"
+    },
+    "talha-linkedln": {
+      "target": "https://www.linkedin.com/in/talha-kara-249014333",
+      "title": "talha linkedln",
+      "active": true,
+      "logo": "assets/logos/talha-linkedln.png",
+      "style": {
+        "fg": "#000000",
+        "bg": "#ffffff",
+        "ecl": "H",
+        "logoScale": 0.22
+      },
+      "createdAt": "2026-10-12T12:54:59Z",
+      "updatedAt": "2026-10-12T12:54:59Z"
     }
   }
 }
