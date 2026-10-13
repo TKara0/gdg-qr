@@ -84,6 +84,20 @@
       },
       "createdAt": "2026-10-13T18:05:05Z",
       "updatedAt": "2026-10-13T18:05:05Z"
+    },
+    "elmas-melisa-sandal-qr": {
+      "target": "https://www.linkedin.com/in/elmas-melisa-sandalcı-57b4a9379?utm_source=share_via&utm_content=profile&utm_medium=member_ios",
+      "title": "elmas-melisa-sandal-qr",
+      "active": true,
+      "logo": "assets/logos/elmas-melisa-sandal-qr.png",
+      "style": {
+        "fg": "#000000",
+        "bg": "#ffffff",
+        "ecl": "H",
+        "logoScale": 0.22
+      },
+      "createdAt": "2026-10-13T20:20:04Z",
+      "updatedAt": "2026-10-13T20:20:04Z"
     }
   }
 }
