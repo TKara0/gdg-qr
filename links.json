@@ -140,6 +140,20 @@
       },
       "createdAt": "2026-10-13T20:24:13Z",
       "updatedAt": "2026-10-13T20:24:13Z"
+    },
+    "muhammet-ali-degerli-qr": {
+      "target": "https://www.linkedin.com/in/m-ali-ab8028296?utm_source=share_via&utm_content=profile&utm_medium=member_android",
+      "title": "muhammet-ali-degerli-qr",
+      "active": true,
+      "logo": "assets/logos/muhammet-ali-degerli-qr.png",
+      "style": {
+        "fg": "#000000",
+        "bg": "#ffffff",
+        "ecl": "H",
+        "logoScale": 0.22
+      },
+      "createdAt": "2026-10-13T20:25:57Z",
+      "updatedAt": "2026-10-13T20:25:57Z"
     }
   }
 }
