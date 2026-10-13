@@ -294,6 +294,20 @@
       },
       "createdAt": "2026-10-13T20:40:48Z",
       "updatedAt": "2026-10-13T20:40:48Z"
+    },
+    "zeynep-ibis": {
+      "target": "https://www.linkedin.com/in/zzeynepibis",
+      "title": "zeynep-ibis",
+      "active": true,
+      "logo": "assets/logos/zeynep-ibis.png",
+      "style": {
+        "fg": "#000000",
+        "bg": "#ffffff",
+        "ecl": "H",
+        "logoScale": 0.22
+      },
+      "createdAt": "2026-10-13T20:41:33Z",
+      "updatedAt": "2026-10-13T20:41:33Z"
     }
   }
 }
