@@ -70,6 +70,20 @@
       },
       "createdAt": "2026-10-13T17:12:39Z",
       "updatedAt": "2026-10-13T17:59:03Z"
+    },
+    "serife-tosun-qr": {
+      "target": "https://www.linkedin.com/in/şerife-tosun-a931a5348?utm_source=share_via&utm_content=profile&utm_medium=member_ios",
+      "title": "serife-tosun-qr",
+      "active": true,
+      "logo": "assets/logos/serife-tosun-qr.png",
+      "style": {
+        "fg": "#000000",
+        "bg": "#ffffff",
+        "ecl": "H",
+        "logoScale": 0.22
+      },
+      "createdAt": "2026-10-13T18:05:05Z",
+      "updatedAt": "2026-10-13T18:05:05Z"
     }
   }
 }
