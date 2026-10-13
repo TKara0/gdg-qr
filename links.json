@@ -224,6 +224,20 @@
       },
       "createdAt": "2026-10-13T20:37:19Z",
       "updatedAt": "2026-10-13T20:37:19Z"
+    },
+    "ahmet-ozcelik": {
+      "target": "https://www.linkedin.com/in/ahmet-özçelik-96a694358?utm_source=share_via&utm_content=profile&utm_medium=member_and roid",
+      "title": "ahmet-özcelik",
+      "active": true,
+      "logo": "assets/logos/ahmet-ozcelik.png",
+      "style": {
+        "fg": "#000000",
+        "bg": "#ffffff",
+        "ecl": "H",
+        "logoScale": 0.22
+      },
+      "createdAt": "2026-10-13T20:37:58Z",
+      "updatedAt": "2026-10-13T20:37:58Z"
     }
   }
 }
