@@ -322,6 +322,20 @@
       },
       "createdAt": "2026-10-13T20:42:15Z",
       "updatedAt": "2026-10-13T20:42:15Z"
+    },
+    "arda-simsek": {
+      "target": "https://www.linkedin.com/in/arda-%C5%9Fim%C5%9Fek-04a146336/",
+      "title": "arda-simsek",
+      "active": true,
+      "logo": "assets/logos/arda-simsek.png",
+      "style": {
+        "fg": "#000000",
+        "bg": "#ffffff",
+        "ecl": "H",
+        "logoScale": 0.22
+      },
+      "createdAt": "2026-10-13T20:42:52Z",
+      "updatedAt": "2026-10-13T20:42:52Z"
     }
   }
 }
