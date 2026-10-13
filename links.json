@@ -252,6 +252,20 @@
       },
       "createdAt": "2026-10-13T20:38:48Z",
       "updatedAt": "2026-10-13T20:38:48Z"
+    },
+    "sueda-kurnaz": {
+      "target": "https://www.linkedin.com/in/suedakurnaz",
+      "title": "sueda-kurnaz",
+      "active": true,
+      "logo": "assets/logos/sueda-kurnaz.png",
+      "style": {
+        "fg": "#000000",
+        "bg": "#ffffff",
+        "ecl": "H",
+        "logoScale": 0.22
+      },
+      "createdAt": "2026-10-13T20:39:27Z",
+      "updatedAt": "2026-10-13T20:39:27Z"
     }
   }
 }
