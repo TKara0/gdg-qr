@@ -210,6 +210,20 @@
       },
       "createdAt": "2026-10-13T20:35:35Z",
       "updatedAt": "2026-10-13T20:35:35Z"
+    },
+    "ataberk-mehmet-ceylan": {
+      "target": "https://www.linkedin.com/in/ataberk-mehmet-ceylan-a0966b384?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=ios_app",
+      "title": "ataberk-mehmet-ceylan",
+      "active": true,
+      "logo": "assets/logos/ataberk-mehmet-ceylan.png",
+      "style": {
+        "fg": "#000000",
+        "bg": "#ffffff",
+        "ecl": "H",
+        "logoScale": 0.22
+      },
+      "createdAt": "2026-10-13T20:37:19Z",
+      "updatedAt": "2026-10-13T20:37:19Z"
     }
   }
 }
