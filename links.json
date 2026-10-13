@@ -61,7 +61,7 @@
       "target": "https://www.linkedin.com/in/s%C4%B1la-%C5%9Fahin-b1099932b/",
       "title": "sıla şahin linkedin",
       "active": true,
-      "logo": null,
+      "logo": "assets/logos/sila-sahin-linkedin.png",
       "style": {
         "fg": "#000000",
         "bg": "#ffffff",
@@ -69,7 +69,7 @@
         "logoScale": 0.22
       },
       "createdAt": "2026-10-13T17:12:39Z",
-      "updatedAt": "2026-10-13T17:12:39Z"
+      "updatedAt": "2026-10-13T17:59:03Z"
     }
   }
 }
