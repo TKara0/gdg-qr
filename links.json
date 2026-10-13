@@ -112,6 +112,20 @@
       },
       "createdAt": "2026-10-13T20:21:11Z",
       "updatedAt": "2026-10-13T20:21:11Z"
+    },
+    "bartu-fuat-sarikaya-qr": {
+      "target": "https://www.linkedin.com/in/bartu-fuat-sar%C4%B1kaya-b511a0394/?isSelfProfile=true",
+      "title": "bartu-fuat-sarikaya-qr",
+      "active": true,
+      "logo": "assets/logos/bartu-fuat-sarikaya-qr.png",
+      "style": {
+        "fg": "#000000",
+        "bg": "#ffffff",
+        "ecl": "H",
+        "logoScale": 0.22
+      },
+      "createdAt": "2026-10-13T20:22:28Z",
+      "updatedAt": "2026-10-13T20:22:28Z"
     }
   }
 }
