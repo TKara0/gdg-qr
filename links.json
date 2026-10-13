@@ -154,6 +154,20 @@
       },
       "createdAt": "2026-10-13T20:25:57Z",
       "updatedAt": "2026-10-13T20:25:57Z"
+    },
+    "yigit-karakaya-qr": {
+      "target": "https://www.linkedin.com/in/yigit-karakaya",
+      "title": "yigit-karakaya-qr",
+      "active": true,
+      "logo": "assets/logos/yigit-karakaya-qr.png",
+      "style": {
+        "fg": "#000000",
+        "bg": "#ffffff",
+        "ecl": "H",
+        "logoScale": 0.22
+      },
+      "createdAt": "2026-10-13T20:26:44Z",
+      "updatedAt": "2026-10-13T20:26:44Z"
     }
   }
 }
