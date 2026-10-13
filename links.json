@@ -266,6 +266,20 @@
       },
       "createdAt": "2026-10-13T20:39:27Z",
       "updatedAt": "2026-10-13T20:39:27Z"
+    },
+    "merve-sude-dogan": {
+      "target": "https://www.linkedin.com/in/merve-sude-do%C4%9Fan-54723b1b9/",
+      "title": "merve-sude-dogan",
+      "active": true,
+      "logo": "assets/logos/merve-sude-dogan.png",
+      "style": {
+        "fg": "#000000",
+        "bg": "#ffffff",
+        "ecl": "H",
+        "logoScale": 0.22
+      },
+      "createdAt": "2026-10-13T20:40:09Z",
+      "updatedAt": "2026-10-13T20:40:09Z"
     }
   }
 }
