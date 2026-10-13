@@ -98,6 +98,20 @@
       },
       "createdAt": "2026-10-13T20:20:04Z",
       "updatedAt": "2026-10-13T20:20:04Z"
+    },
+    "selcuk-dinc-qr": {
+      "target": "https://www.linkedin.com/in/selcukdinc",
+      "title": "selcuk-dinc-qr",
+      "active": true,
+      "logo": "assets/logos/selcuk-dinc-qr.png",
+      "style": {
+        "fg": "#000000",
+        "bg": "#ffffff",
+        "ecl": "H",
+        "logoScale": 0.22
+      },
+      "createdAt": "2026-10-13T20:21:11Z",
+      "updatedAt": "2026-10-13T20:21:11Z"
     }
   }
 }
