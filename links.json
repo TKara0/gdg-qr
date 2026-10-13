@@ -280,6 +280,20 @@
       },
       "createdAt": "2026-10-13T20:40:09Z",
       "updatedAt": "2026-10-13T20:40:09Z"
+    },
+    "ebrar-buse-yilmaz": {
+      "target": "https://www.linkedin.com/in/ebrar-buse-yılmaz-4b5430390?utm_source=share_via&utm_content=profile&utm_medium=member_ios",
+      "title": "ebrar-buse-yilmaz",
+      "active": true,
+      "logo": "assets/logos/ebrar-buse-yilmaz.png",
+      "style": {
+        "fg": "#000000",
+        "bg": "#ffffff",
+        "ecl": "H",
+        "logoScale": 0.22
+      },
+      "createdAt": "2026-10-13T20:40:48Z",
+      "updatedAt": "2026-10-13T20:40:48Z"
     }
   }
 }
