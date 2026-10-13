@@ -238,6 +238,20 @@
       },
       "createdAt": "2026-10-13T20:37:58Z",
       "updatedAt": "2026-10-13T20:37:58Z"
+    },
+    "zeynep-nisa-ince": {
+      "target": "https://linkedin.com/in/zeynep-nisa-ince-0a0ab6393",
+      "title": "zeynep-nisa-ince",
+      "active": true,
+      "logo": "assets/logos/zeynep-nisa-ince.png",
+      "style": {
+        "fg": "#000000",
+        "bg": "#ffffff",
+        "ecl": "H",
+        "logoScale": 0.22
+      },
+      "createdAt": "2026-10-13T20:38:48Z",
+      "updatedAt": "2026-10-13T20:38:48Z"
     }
   }
 }
