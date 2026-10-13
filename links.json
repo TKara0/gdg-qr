@@ -182,6 +182,20 @@
       },
       "createdAt": "2026-10-13T20:27:40Z",
       "updatedAt": "2026-10-13T20:27:40Z"
+    },
+    "batuhan-unluler-qr": {
+      "target": "https://www.linkedin.com/in/batuhan-unluler",
+      "title": "batuhan-ünlüler-qr",
+      "active": true,
+      "logo": "assets/logos/batuhan-unluler-qr.png",
+      "style": {
+        "fg": "#000000",
+        "bg": "#ffffff",
+        "ecl": "H",
+        "logoScale": 0.22
+      },
+      "createdAt": "2026-10-13T20:34:51Z",
+      "updatedAt": "2026-10-13T20:34:51Z"
     }
   }
 }
