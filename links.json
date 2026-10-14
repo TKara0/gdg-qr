@@ -336,6 +336,20 @@
       },
       "createdAt": "2026-10-13T20:42:52Z",
       "updatedAt": "2026-10-13T20:42:52Z"
+    },
+    "hakki-dorukhan-izgi": {
+      "target": "https://www.linkedin.com/in/hakkidorukhanizgi/",
+      "title": "hakki-dorukhan-izgi",
+      "active": true,
+      "logo": "assets/logos/hakki-dorukhan-izgi.png",
+      "style": {
+        "fg": "#000000",
+        "bg": "#ffffff",
+        "ecl": "H",
+        "logoScale": 0.22
+      },
+      "createdAt": "2026-10-14T15:09:52Z",
+      "updatedAt": "2026-10-14T15:09:52Z"
     }
   }
 }
