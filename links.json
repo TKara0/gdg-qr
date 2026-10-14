@@ -434,6 +434,20 @@
       },
       "createdAt": "2026-10-14T15:16:56Z",
       "updatedAt": "2026-10-14T15:16:56Z"
+    },
+    "ahmet-burhan-kayali": {
+      "target": "https://www.linkedin.com/in/ahmet-burhan-kayali/",
+      "title": "ahmet-burhan-kayali",
+      "active": true,
+      "logo": "assets/logos/ahmet-burhan-kayali.png",
+      "style": {
+        "fg": "#000000",
+        "bg": "#ffffff",
+        "ecl": "H",
+        "logoScale": 0.22
+      },
+      "createdAt": "2026-10-14T15:17:48Z",
+      "updatedAt": "2026-10-14T15:17:48Z"
     }
   }
 }
