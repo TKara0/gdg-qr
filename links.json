@@ -420,6 +420,20 @@
       },
       "createdAt": "2026-10-14T15:15:56Z",
       "updatedAt": "2026-10-14T15:15:56Z"
+    },
+    "hakan-tekelioglu": {
+      "target": "https://www.linkedin.com/in/hakan-tekelio%C4%9Flu-b26a60296/?isSelfProfile=true",
+      "title": "hakan-tekelioğlu",
+      "active": true,
+      "logo": "assets/logos/hakan-tekelioglu.png",
+      "style": {
+        "fg": "#000000",
+        "bg": "#ffffff",
+        "ecl": "H",
+        "logoScale": 0.22
+      },
+      "createdAt": "2026-10-14T15:16:56Z",
+      "updatedAt": "2026-10-14T15:16:56Z"
     }
   }
 }
