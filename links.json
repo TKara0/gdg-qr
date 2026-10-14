@@ -392,6 +392,20 @@
       },
       "createdAt": "2026-10-14T15:13:41Z",
       "updatedAt": "2026-10-14T15:13:41Z"
+    },
+    "sabiha-feyza-toprak": {
+      "target": "https://www.linkedin.com/in/sabiha-feyza-toprak/",
+      "title": "sabiha-feyza-toprak",
+      "active": true,
+      "logo": "assets/logos/sabiha-feyza-toprak.png",
+      "style": {
+        "fg": "#000000",
+        "bg": "#ffffff",
+        "ecl": "H",
+        "logoScale": 0.22
+      },
+      "createdAt": "2026-10-14T15:14:54Z",
+      "updatedAt": "2026-10-14T15:14:54Z"
     }
   }
 }
