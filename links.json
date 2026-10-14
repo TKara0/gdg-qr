@@ -448,6 +448,20 @@
       },
       "createdAt": "2026-10-14T15:17:48Z",
       "updatedAt": "2026-10-14T15:17:48Z"
+    },
+    "barkin-ari": {
+      "target": "https://www.linkedin.com/in/barkin-ari/",
+      "title": "barkin-ari",
+      "active": true,
+      "logo": "assets/logos/barkin-ari.png",
+      "style": {
+        "fg": "#000000",
+        "bg": "#ffffff",
+        "ecl": "H",
+        "logoScale": 0.22
+      },
+      "createdAt": "2026-10-14T15:18:39Z",
+      "updatedAt": "2026-10-14T15:18:39Z"
     }
   }
 }
