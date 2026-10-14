@@ -406,6 +406,20 @@
       },
       "createdAt": "2026-10-14T15:14:54Z",
       "updatedAt": "2026-10-14T15:14:54Z"
+    },
+    "ibrahim-ege-kabaharnup": {
+      "target": "https://www.linkedin.com/in/ibrahim-ege-kabaharnup-438443277/?isSelfProfile=true",
+      "title": "ibrahim-ege-kabaharnup",
+      "active": true,
+      "logo": "assets/logos/ibrahim-ege-kabaharnup.png",
+      "style": {
+        "fg": "#000000",
+        "bg": "#ffffff",
+        "ecl": "H",
+        "logoScale": 0.22
+      },
+      "createdAt": "2026-10-14T15:15:56Z",
+      "updatedAt": "2026-10-14T15:15:56Z"
     }
   }
 }
