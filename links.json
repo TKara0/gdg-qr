@@ -378,6 +378,20 @@
       },
       "createdAt": "2026-10-14T15:11:49Z",
       "updatedAt": "2026-10-14T15:11:49Z"
+    },
+    "muhammed-hasan-derbentli": {
+      "target": "https://www.linkedin.com/in/muhammed-hasan-derbentli-695044433/",
+      "title": "muhammed-hasan-derbentli",
+      "active": true,
+      "logo": "assets/logos/muhammed-hasan-derbentli.png",
+      "style": {
+        "fg": "#000000",
+        "bg": "#ffffff",
+        "ecl": "H",
+        "logoScale": 0.22
+      },
+      "createdAt": "2026-10-14T15:13:41Z",
+      "updatedAt": "2026-10-14T15:13:41Z"
     }
   }
 }
