@@ -350,6 +350,20 @@
       },
       "createdAt": "2026-10-14T15:09:52Z",
       "updatedAt": "2026-10-14T15:09:52Z"
+    },
+    "azra-delen": {
+      "target": "https://www.linkedin.com/in/azra-delen-936230324/",
+      "title": "azra-delen",
+      "active": true,
+      "logo": "assets/logos/azra-delen.png",
+      "style": {
+        "fg": "#000000",
+        "bg": "#ffffff",
+        "ecl": "H",
+        "logoScale": 0.22
+      },
+      "createdAt": "2026-10-14T15:11:03Z",
+      "updatedAt": "2026-10-14T15:11:03Z"
     }
   }
 }
