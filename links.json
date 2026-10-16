@@ -462,6 +462,20 @@
       },
       "createdAt": "2026-10-14T15:18:39Z",
       "updatedAt": "2026-10-14T15:18:39Z"
+    },
+    "gdg-instagram-on-campus": {
+      "target": "https://www.instagram.com/gdgoncampusselcuk?mdxt=ZTdzeTcyYW84bjEw",
+      "title": "gdg instagram on campus",
+      "active": true,
+      "logo": "assets/logos/gdg-instagram-on-campus.png",
+      "style": {
+        "fg": "#000000",
+        "bg": "#ffffff",
+        "ecl": "H",
+        "logoScale": 0.22
+      },
+      "createdAt": "2026-10-16T13:25:29Z",
+      "updatedAt": "2026-10-16T13:25:29Z"
     }
   }
 }
