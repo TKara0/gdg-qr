@@ -476,6 +476,20 @@
       },
       "createdAt": "2026-10-16T13:25:29Z",
       "updatedAt": "2026-10-16T13:25:29Z"
+    },
+    "elif-sena-dindar": {
+      "target": "https://www.linkedin.com/in/elif-sena-dindar-39b0a729a/",
+      "title": "Elif Sena Dindar",
+      "active": true,
+      "logo": "assets/logos/elif-sena-dindar.png",
+      "style": {
+        "fg": "#000000",
+        "bg": "#ffffff",
+        "ecl": "H",
+        "logoScale": 0.22
+      },
+      "createdAt": "2026-11-17T10:09:00Z",
+      "updatedAt": "2026-11-17T10:09:00Z"
     }
   }
 }
