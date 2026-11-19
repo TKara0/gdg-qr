@@ -490,6 +490,20 @@
       },
       "createdAt": "2026-11-17T10:09:00Z",
       "updatedAt": "2026-11-17T10:09:00Z"
+    },
+    "gdgoncampus-yazgit-form": {
+      "target": "https://docs.google.com/forms/d/e/1FAIpQLSdSQOyFxpsaaOHHgusAQMA98IhtVPlfAwXnsya6-8od75kMWg/viewform",
+      "title": "Gdgoncampus-Yazgit form",
+      "active": true,
+      "logo": "assets/logos/gdgoncampus-yazgit-form.png",
+      "style": {
+        "fg": "#000000",
+        "bg": "#ffffff",
+        "ecl": "H",
+        "logoScale": 0.22
+      },
+      "createdAt": "2026-11-19T13:06:27Z",
+      "updatedAt": "2026-11-19T13:06:27Z"
     }
   }
 }
