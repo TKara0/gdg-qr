@@ -518,6 +518,20 @@
       },
       "createdAt": "2026-11-20T12:39:42Z",
       "updatedAt": "2026-11-20T12:39:42Z"
+    },
+    "egemen-linkedln": {
+      "target": "https://www.linkedin.com/in/egemen-turudio%C4%9Flu-55bb37245/",
+      "title": "egemen linkedln",
+      "active": true,
+      "logo": "assets/logos/egemen-linkedln.png",
+      "style": {
+        "fg": "#000000",
+        "bg": "#ffffff",
+        "ecl": "H",
+        "logoScale": 0.22
+      },
+      "createdAt": "2026-11-20T12:41:27Z",
+      "updatedAt": "2026-11-20T12:41:27Z"
     }
   }
 }
